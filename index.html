@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Liar's Bar — Russian Roulette Edition</title>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#d97706" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Liar's Bar" />
+    <meta property="og:title" content="🃏 Liar's Bar — Russian Roulette Edition" />
+    <meta property="og:description" content="Bluff your way through. Get caught? Pull the trigger. Play free with friends worldwide." />
+    <meta property="og:type" content="website" />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body, #root { height: 100%; }
+      body { background: #000; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
+  </body>
+</html>

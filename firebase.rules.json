@@ -1,0 +1,32 @@
+{
+  "rules": {
+    "leaderboard": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth.uid === $uid"
+      }
+    },
+    "rooms": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "hands": {
+          "$uid": {
+            ".read": "auth.uid === $uid || root.child('rooms').child($code).child('meta/host').val() === auth.uid",
+            ".write": "root.child('rooms').child($code).child('meta/host').val() === auth.uid"
+          }
+        },
+        "reactions": { ".read": "auth != null", ".write": "auth != null" },
+        "spectators": { ".read": "auth != null", ".write": "auth != null" },
+        "presence": {
+          "$uid": {
+            ".read": "auth != null",
+            ".write": "auth.uid === $uid"
+          }
+        },
+        "log": { ".read": "auth != null", ".write": "auth != null" },
+        "moments": { ".read": "auth != null", ".write": "auth != null" }
+      }
+    }
+  }
+}
