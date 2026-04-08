@@ -23,6 +23,7 @@ function JoinPrompt({ code, uid, isSpectateMode, room, onExit }) {
 
   // Role: if can play, let them choose. Otherwise force spectate.
   const [role, setRole] = useState(canPlay ? "player" : "spectator");
+  const [showFullPrompt, setShowFullPrompt] = useState(false);
 
   async function handleJoin() {
     if (!name.trim() || status === "loading") return;
@@ -72,8 +73,14 @@ function JoinPrompt({ code, uid, isSpectateMode, room, onExit }) {
           <div style={{ display:"flex", gap:6, background:"#0a0400", borderRadius:12, padding:4, marginBottom:16 }}>
             <button
               style={tabStyle("player")}
-              onClick={() => canPlay && setRole("player")}
-              title={!canPlay ? (gameStarted ? "Game already started" : "Room is full") : ""}
+              onClick={() => {
+                if (canPlay) {
+                  setRole("player");
+                  setShowFullPrompt(false);
+                } else {
+                  setShowFullPrompt(true);
+                }
+              }}
             >
               🃏 Player
               {!canPlay && <span style={{ display:"block", fontSize:10, color:"#451a03", fontWeight:400 }}>
@@ -86,14 +93,42 @@ function JoinPrompt({ code, uid, isSpectateMode, room, onExit }) {
             </button>
           </div>
 
+          {/* Can't join as player prompt */}
+          {showFullPrompt && (
+            <div style={{ background:"rgba(153,27,27,0.15)", border:"1px solid #7f1d1d", borderRadius:10, padding:"12px 14px", marginBottom:12 }}>
+              <p style={{ color:"#f87171", fontSize:13, fontWeight:700, margin:"0 0 6px" }}>
+                {gameStarted ? "Game already started" : "Room is full"} — can't join as player
+              </p>
+              <p style={{ color:"#9ca3af", fontSize:12, margin:"0 0 10px" }}>
+                You can watch the game live as a spectator instead.
+              </p>
+              <div style={{ display:"flex", gap:8 }}>
+                <button onClick={() => { setRole("spectator"); setShowFullPrompt(false); }} style={{
+                  flex:1, padding:"9px 0", borderRadius:9, fontWeight:700, fontSize:13,
+                  border:"2px solid #15803d", background:"rgba(21,128,61,0.2)", color:"#34d399", cursor:"pointer",
+                }}>
+                  👁 Watch instead
+                </button>
+                <button onClick={() => setShowFullPrompt(false)} style={{
+                  padding:"9px 14px", borderRadius:9, fontWeight:700, fontSize:13,
+                  border:"1px solid #3b1200", background:"transparent", color:"#78350f", cursor:"pointer",
+                }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Role description */}
-          <div style={{ background:"rgba(0,0,0,0.3)", border:`1px solid ${role === "player" ? "#451a03" : "#14532d"}`, borderRadius:10, padding:"10px 14px", marginBottom:16, textAlign:"center" }}>
-            <p style={{ color: role === "player" ? "#d97706" : "#4ade80", fontSize:12, margin:0 }}>
-              {role === "player"
-                ? "You'll play cards, bluff, and face the revolver 🔫"
-                : "You'll watch the game live and react with emojis 👀"}
-            </p>
-          </div>
+          {!showFullPrompt && (
+            <div style={{ background:"rgba(0,0,0,0.3)", border:`1px solid ${role === "player" ? "#451a03" : "#14532d"}`, borderRadius:10, padding:"10px 14px", marginBottom:16, textAlign:"center" }}>
+              <p style={{ color: role === "player" ? "#d97706" : "#4ade80", fontSize:12, margin:0 }}>
+                {role === "player"
+                  ? "You'll play cards, bluff, and face the revolver 🔫"
+                  : "You'll watch the game live and react with emojis 👀"}
+              </p>
+            </div>
+          )}
 
           {/* Name input */}
           <label style={{ color:"#a16207", fontSize:10, textTransform:"uppercase", letterSpacing:3, display:"block", marginBottom:6 }}>Your name</label>
