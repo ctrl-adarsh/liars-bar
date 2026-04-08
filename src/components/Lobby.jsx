@@ -11,6 +11,7 @@ export default function Lobby({ code, room, uid, isHost, presence }) {
   const spectators = Object.entries(room.spectators || {}).map(([id, s]) => ({ id, ...s }));
   const canStart = isHost && playerList.length >= 2;
   const shareUrl = `${window.location.origin}/room/${code}`;
+  const watchUrl = `${window.location.origin}/room/${code}?watch=1`;
   const myName = players[uid]?.name || "Player";
 
   async function handleStart() {

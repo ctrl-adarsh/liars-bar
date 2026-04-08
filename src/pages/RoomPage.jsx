@@ -13,7 +13,7 @@ export default function RoomPage() {
   const { code } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const isSpectateMode = searchParams.get("spectate") === "1";
+  const isSpectateMode = searchParams.get("spectate") === "1" || searchParams.get("watch") === "1";
 
   const uid = auth.currentUser?.uid;
 
@@ -124,6 +124,16 @@ export default function RoomPage() {
       <p style={{ color: "#f87171" }}>You're not in this room. <button onClick={() => navigate("/")} style={{ color: "#d97706", background: "none", border: "none", cursor: "pointer" }}>Go back</button></p>
     </div>
   );
+
+  // If game already started and this uid isn't a player → auto-spectate
+  const gameStarted = meta.status !== "lobby";
+  if (gameStarted && !amPlayer) {
+    return (
+      <Spectator code={code} room={room} uid={uid}
+        name={room.spectators?.[uid]?.name || "Spectator"}
+        onExit={() => navigate("/")} />
+    );
+  }
 
   if (meta.status === "lobby") {
     return <Lobby code={code} room={room} uid={uid} isHost={isHost} presence={presence} />;
