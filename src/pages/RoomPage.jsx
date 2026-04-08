@@ -189,39 +189,26 @@ export default function RoomPage() {
   const amSpectator = !!room.spectators?.[uid];
   const myName = players?.[uid]?.name || room.spectators?.[uid]?.name || "Spectator";
 
-  // Route spectators to their view
+  // Already a confirmed spectator → spectator view
   if (isSpectateMode || (amSpectator && !amPlayer)) {
     return (
-      <Spectator
-        code={code}
-        room={room}
-        uid={uid}
-        name={myName}
-        onExit={() => navigate("/")}
-      />
+      <Spectator code={code} room={room} uid={uid} name={myName} onExit={() => navigate("/")} />
     );
   }
 
-  if (!amPlayer) return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#000" }}>
-      <p style={{ color: "#f87171" }}>You're not in this room. <button onClick={() => navigate("/")} style={{ color: "#d97706", background: "none", border: "none", cursor: "pointer" }}>Go back</button></p>
-    </div>
-  );
-
-  // If game already started and this uid isn't a player → auto-spectate
-  const gameStarted = meta.status !== "lobby";
-  if (gameStarted && !amPlayer) {
+  // Not in the room at all → show join/watch prompt
+  if (!amPlayer) {
     return (
-      <Spectator code={code} room={room} uid={uid}
-        name={room.spectators?.[uid]?.name || "Spectator"}
-        onExit={() => navigate("/")} />
+      <JoinPrompt code={code} uid={uid} isSpectateMode={isSpectateMode} room={room} onExit={() => navigate("/")} />
     );
   }
 
+  // In the lobby
   if (meta.status === "lobby") {
     return <Lobby code={code} room={room} uid={uid} isHost={isHost} presence={presence} />;
   }
 
+  // In the game
   return (
     <Game
       code={code}
