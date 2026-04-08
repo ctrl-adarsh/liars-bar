@@ -17,15 +17,18 @@ function JoinPrompt({ code, uid, isSpectateMode, room, onExit }) {
   const [error, setError] = useState("");
 
   const gameStarted = room?.meta?.status !== "lobby";
-  const isFull = Object.keys(room?.players || {}).length >= 4;
-  // If game started or room full and not spectate mode → force spectate
-  const mustSpectate = isSpectateMode || gameStarted || isFull;
+  const playerCount = Object.keys(room?.players || {}).length;
+  const isFull = playerCount >= 4;
+  const canPlay = !gameStarted && !isFull && !isSpectateMode;
+
+  // Role: if can play, let them choose. Otherwise force spectate.
+  const [role, setRole] = useState(canPlay ? "player" : "spectator");
 
   async function handleJoin() {
     if (!name.trim() || status === "loading") return;
     setStatus("loading"); setError("");
     try {
-      if (mustSpectate) {
+      if (role === "spectator") {
         await joinAsSpectator(code, uid, name.trim());
         navigate(`/room/${code}?watch=1`);
       } else {
@@ -38,30 +41,61 @@ function JoinPrompt({ code, uid, isSpectateMode, room, onExit }) {
     }
   }
 
+  const tabStyle = (r) => ({
+    flex: 1, padding: "12px 0", borderRadius: 10, fontWeight: 700, fontSize: 14,
+    border: "none", cursor: canPlay ? "pointer" : "default",
+    background: role === r ? (r === "player" ? "#451a03" : "rgba(0,0,0,0.4)") : "transparent",
+    color: role === r ? (r === "player" ? "#fbbf24" : "#34d399") : "#78350f",
+    transition: "all 0.2s",
+  });
+
   return (
     <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:24, background:"radial-gradient(ellipse at 50% 40%, #1a0800, #000)" }}>
       <div style={{ width:"100%", maxWidth:340 }}>
         <div style={{ textAlign:"center", marginBottom:28 }}>
           <h1 style={{ color:"#d97706", fontSize:42, fontFamily:"Georgia,serif", fontWeight:900, margin:"0 0 4px" }}>🃏 Liar's Bar</h1>
-          <p style={{ color:"#a16207", fontSize:11, letterSpacing:5, textTransform:"uppercase", margin:0 }}>
-            {mustSpectate ? "Join as spectator" : "You've been invited"}
-          </p>
+          <p style={{ color:"#a16207", fontSize:11, letterSpacing:5, textTransform:"uppercase", margin:0 }}>You've been invited</p>
         </div>
 
         <div style={{ background:"rgba(92,44,0,0.15)", border:"1px solid #451a03", borderRadius:20, padding:24 }}>
+          {/* Room code */}
           <div style={{ textAlign:"center", marginBottom:20 }}>
-            <p style={{ color:"#78350f", fontSize:11, margin:"0 0 6px" }}>Room</p>
+            <p style={{ color:"#78350f", fontSize:11, margin:"0 0 4px" }}>Room</p>
             <p style={{ color:"#fbbf24", fontSize:36, fontFamily:"Georgia,serif", fontWeight:900, letterSpacing:8, margin:0 }}>{code}</p>
+            <p style={{ color:"#78350f", fontSize:11, margin:"4px 0 0" }}>
+              {playerCount}/4 players · {gameStarted ? "Game in progress" : "In lobby"}
+            </p>
           </div>
 
-          {mustSpectate && (
-            <div style={{ background:"rgba(0,0,0,0.3)", border:"1px solid #1c0900", borderRadius:10, padding:"10px 14px", marginBottom:16, textAlign:"center" }}>
-              <p style={{ color:"#a16207", fontSize:12, margin:0 }}>
-                {gameStarted ? "Game already in progress — you'll join as a spectator 👁" : "Room is full — you'll join as a spectator 👁"}
-              </p>
-            </div>
-          )}
+          {/* Role selector */}
+          <p style={{ color:"#a16207", fontSize:10, textTransform:"uppercase", letterSpacing:3, margin:"0 0 8px" }}>Join as</p>
+          <div style={{ display:"flex", gap:6, background:"#0a0400", borderRadius:12, padding:4, marginBottom:16 }}>
+            <button
+              style={tabStyle("player")}
+              onClick={() => canPlay && setRole("player")}
+              title={!canPlay ? (gameStarted ? "Game already started" : "Room is full") : ""}
+            >
+              🃏 Player
+              {!canPlay && <span style={{ display:"block", fontSize:10, color:"#451a03", fontWeight:400 }}>
+                {gameStarted ? "started" : "full"}
+              </span>}
+            </button>
+            <button style={tabStyle("spectator")} onClick={() => setRole("spectator")}>
+              👁 Spectator
+              <span style={{ display:"block", fontSize:10, color: role === "spectator" ? "#4ade80" : "#451a03", fontWeight:400 }}>watch only</span>
+            </button>
+          </div>
 
+          {/* Role description */}
+          <div style={{ background:"rgba(0,0,0,0.3)", border:`1px solid ${role === "player" ? "#451a03" : "#14532d"}`, borderRadius:10, padding:"10px 14px", marginBottom:16, textAlign:"center" }}>
+            <p style={{ color: role === "player" ? "#d97706" : "#4ade80", fontSize:12, margin:0 }}>
+              {role === "player"
+                ? "You'll play cards, bluff, and face the revolver 🔫"
+                : "You'll watch the game live and react with emojis 👀"}
+            </p>
+          </div>
+
+          {/* Name input */}
           <label style={{ color:"#a16207", fontSize:10, textTransform:"uppercase", letterSpacing:3, display:"block", marginBottom:6 }}>Your name</label>
           <input
             value={name} onChange={(e) => setName(e.target.value)}
@@ -74,13 +108,13 @@ function JoinPrompt({ code, uid, isSpectateMode, room, onExit }) {
 
           <button onClick={handleJoin} disabled={!name.trim() || status === "loading"}
             style={{ width:"100%", padding:14, borderRadius:12, fontWeight:900, fontSize:16, letterSpacing:2,
-              border:`2px solid ${name.trim() ? "#d97706" : "#1c0900"}`,
-              background: name.trim() ? "linear-gradient(135deg, #b45309, #7c2d12)" : "#0a0400",
-              color: name.trim() ? "#fef3c7" : "#a16207",
+              border:`2px solid ${name.trim() ? (role === "player" ? "#d97706" : "#15803d") : "#1c0900"}`,
+              background: name.trim() ? (role === "player" ? "linear-gradient(135deg, #b45309, #7c2d12)" : "rgba(21,128,61,0.25)") : "#0a0400",
+              color: name.trim() ? (role === "player" ? "#fef3c7" : "#34d399") : "#a16207",
               cursor: name.trim() ? "pointer" : "not-allowed",
-              boxShadow: name.trim() ? "0 4px 24px rgba(180,83,9,0.3)" : "none",
+              boxShadow: name.trim() ? "0 4px 24px rgba(180,83,9,0.25)" : "none",
             }}>
-            {status === "loading" ? "Joining…" : mustSpectate ? "WATCH GAME" : "JOIN GAME"}
+            {status === "loading" ? "Joining…" : role === "player" ? "JOIN GAME" : "WATCH GAME"}
           </button>
         </div>
 
