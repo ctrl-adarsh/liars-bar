@@ -23,7 +23,10 @@ export function ensureAuth() {
   _authReady = new Promise((resolve) => {
     if (auth.currentUser) return resolve(auth.currentUser);
     const unsub = onAuthStateChanged(auth, (user) => {
-      if (user) { unsub(); resolve(user); }
+      if (user) {
+        unsub();
+        resolve(user);
+      }
     });
     signInAnonymously(auth);
   });
