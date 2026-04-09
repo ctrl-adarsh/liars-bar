@@ -21,8 +21,25 @@ export default function Lobby({ code, room, uid, isHost, presence }) {
     catch (e) { console.error(e); setStarting(false); }
   }
 
-  function copyLink() {
-    navigator.clipboard.writeText(shareUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  function copyCode() {
+    navigator.clipboard.writeText(code).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  }
+
+  async function shareInvite(asSpectator = false) {
+    const url = asSpectator ? watchUrl : shareUrl;
+    const text = asSpectator
+      ? `👀 Watch my Liar's Bar game live!\nRoom code: ${code}\n${url}`
+      : `🃏 Join my Liar's Bar game!\nRoom code: ${code}\n${url}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Liar's Bar", text, url });
+        return;
+      } catch (e) {
+        if (e.name === "AbortError") return;
+      }
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   }
 
   function isOnline(puid) {
@@ -37,17 +54,47 @@ export default function Lobby({ code, room, uid, isHost, presence }) {
           <p style={{ color: "#a16207", fontSize: 11, letterSpacing: 5, textTransform: "uppercase", margin: 0 }}>The bar is open</p>
         </div>
 
-        {/* Room code */}
+        {/* Room code + share */}
         <div style={{ background: "rgba(92,44,0,0.15)", border: "1px solid #451a03", borderRadius: 20, padding: 22, marginBottom: 14 }}>
           <p style={{ color: "#a16207", fontSize: 10, textTransform: "uppercase", letterSpacing: 3, margin: "0 0 10px" }}>Room code</p>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
             <span style={{ fontSize: 40, fontFamily: "Georgia,serif", fontWeight: 900, color: "#fbbf24", letterSpacing: 10, lineHeight: 1 }}>{code}</span>
-            <button onClick={copyLink} style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #451a03", background: copied ? "rgba(21,128,61,0.2)" : "transparent", color: copied ? "#34d399" : "#d97706", cursor: "pointer", fontSize: 12, fontWeight: 700, transition: "all 0.2s" }}>
-              {copied ? "✓ Copied!" : "Copy link"}
+            <button onClick={copyCode} style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #451a03", background: copied ? "rgba(21,128,61,0.2)" : "transparent", color: copied ? "#34d399" : "#d97706", cursor: "pointer", fontSize: 12, fontWeight: 700, transition: "all 0.2s" }}>
+              {copied ? "✓ Copied!" : "Copy code"}
             </button>
           </div>
-          <p style={{ color: "#78350f", fontSize: 10, margin: 0, wordBreak: "break-all", fontFamily: "monospace" }}>{shareUrl}</p>
-          <p style={{ color: "#78350f", fontSize: 10, margin: "6px 0 0" }}>Share link with friends to watch 👁</p>
+
+          <p style={{ color: "#78350f", fontSize: 10, textTransform: "uppercase", letterSpacing: 2, margin: "0 0 8px" }}>Invite friends</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <button onClick={() => shareInvite(false)} style={{
+              display: "flex", alignItems: "center", gap: 10, padding: "12px 16px",
+              borderRadius: 12, border: "2px solid #d97706",
+              background: "linear-gradient(135deg, #b45309, #7c2d12)",
+              color: "#fef3c7", fontWeight: 700, fontSize: 14, cursor: "pointer",
+              boxShadow: "0 4px 16px rgba(180,83,9,0.3)",
+            }}>
+              <span style={{ fontSize: 20 }}>🃏</span>
+              <div style={{ textAlign: "left", flex: 1 }}>
+                <div>Invite to Play</div>
+                <div style={{ fontSize: 11, fontWeight: 400, color: "#fcd34d", marginTop: 1 }}>They join as a player</div>
+              </div>
+              <span style={{ fontSize: 18 }}>↗</span>
+            </button>
+
+            <button onClick={() => shareInvite(true)} style={{
+              display: "flex", alignItems: "center", gap: 10, padding: "12px 16px",
+              borderRadius: 12, border: "1px solid #15803d",
+              background: "rgba(21,128,61,0.15)",
+              color: "#34d399", fontWeight: 700, fontSize: 14, cursor: "pointer",
+            }}>
+              <span style={{ fontSize: 20 }}>👁</span>
+              <div style={{ textAlign: "left", flex: 1 }}>
+                <div>Invite to Watch</div>
+                <div style={{ fontSize: 11, fontWeight: 400, color: "#86efac", marginTop: 1 }}>They join as a spectator</div>
+              </div>
+              <span style={{ fontSize: 18 }}>↗</span>
+            </button>
+          </div>
         </div>
 
         {/* Players */}
@@ -73,8 +120,7 @@ export default function Lobby({ code, room, uid, isHost, presence }) {
                     </p>
                     {isThisHost && <p style={{ color: "#a16207", fontSize: 11, margin: 0 }}>host</p>}
                   </div>
-                  {/* Online presence dot */}
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: online ? "#22c55e" : "#374151", transition: "background 0.3s" }} title={online ? "Online" : "Connecting…"} />
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: online ? "#22c55e" : "#374151", transition: "background 0.3s" }} />
                 </div>
               );
             })}
@@ -113,7 +159,6 @@ export default function Lobby({ code, room, uid, isHost, presence }) {
             color: canStart ? "#fef3c7" : "#a16207",
             cursor: canStart ? "pointer" : "not-allowed",
             boxShadow: canStart ? "0 4px 24px rgba(180,83,9,0.35)" : "none",
-            marginBottom: 0,
           }}>
             {starting ? "Dealing…" : canStart ? "START GAME" : `Need ${2 - playerList.length} more player${2 - playerList.length !== 1 ? "s" : ""}`}
           </button>
@@ -129,7 +174,6 @@ export default function Lobby({ code, room, uid, isHost, presence }) {
         )}
       </div>
 
-      {/* Reactions */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0 }}>
         <Reactions code={code} uid={uid} name={myName} />
       </div>
