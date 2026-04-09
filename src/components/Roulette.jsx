@@ -42,24 +42,23 @@ export default function RouletteScreen({
   const animRef = useRef(null);
   const hasSpunRef = useRef(false);
 
-  // When Firebase sets spinning=true and spinTarget arrives, all clients animate
+  // Watch for spinning + spinTarget — start animation on ALL clients
   useEffect(() => {
-    if (spinning && spinTarget != null && !hasSpunRef.current) {
-      hasSpunRef.current = true;
-      runAnimation(spinTarget);
-    }
-  }, [spinning, spinTarget]);
+    if (!spinning) return;
+    if (hasSpunRef.current) return;
+    // Wait for spinTarget to arrive (may lag 1 tick behind spinning)
+    if (spinTarget == null) return;
+    hasSpunRef.current = true;
+    runAnimation(spinTarget);
+  }); // no dependency array — runs every render, guarded by hasSpunRef
 
   function runAnimation(target) {
     setPhase("spinning");
     const t0 = Date.now(), dur = 2200;
-    const startRot = 0;
-
     (function step() {
       const t = Math.min((Date.now() - t0) / dur, 1);
       const eased = 1 - Math.pow(1 - t, 3);
-      const r = startRot + eased * (target - startRot);
-      setRot(r);
+      setRot(eased * target);
       if (t < 1) {
         animRef.current = requestAnimationFrame(step);
       } else {
@@ -75,7 +74,6 @@ export default function RouletteScreen({
 
   function handlePull() {
     if (phase !== "ready" || !canResolve) return;
-    // Compute a shared spin target and send to Firebase
     const fullSpins = (5 + Math.floor(Math.random() * 5)) * 360;
     const chamberOffset = (currentChamber % CHAMBERS) * 60;
     const target = fullSpins + chamberOffset;
