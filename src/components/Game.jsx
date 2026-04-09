@@ -2,7 +2,7 @@ import { useState } from "react";
 import { RANKS, CHAMBERS } from "../lib/game.js";
 import {
   playCards, callBluff, acceptWin,
-  proceedToRoulette, resolveRoulette,
+  proceedToRoulette, resolveRoulette, startSpin,
 } from "../lib/room.js";
 import RouletteScreen from "./Roulette.jsx";
 import Reactions from "./Reactions.jsx";
@@ -128,9 +128,20 @@ export default function Game({ code, room, myHand, uid, isHost, presence, onExit
   }
 
   // ── Phase: Roulette ──────────────────────────────────────────────────────────
-  if (meta.phase === "roulette" && meta.revealData) {
+  if ((meta.phase === "roulette" || meta.phase === "roulette_spinning") && meta.revealData) {
     const { revealData } = meta;
     const loser = players[revealData.loserUid];
+    const iAmLoser = revealData.loserUid === uid;
+    const canPull = iAmLoser || isHost;
+
+    async function handleRouletteAction(action) {
+      if (action && typeof action === "object" && action.type === "pull") {
+        await startSpin(code, action.spinTarget);
+      } else {
+        await handleRouletteResult(action);
+      }
+    }
+
     return (
       <RouletteScreen
         loserName={loser?.name || "?"}
@@ -139,7 +150,10 @@ export default function Game({ code, room, myHand, uid, isHost, presence, onExit
           : `Called a bluff incorrectly — ${revealData.accusedName} was honest`}
         bulletChamber={meta.bullet}
         currentChamber={meta.shots}
-        onResult={handleRouletteResult}
+        onResult={handleRouletteAction}
+        canResolve={canPull}
+        spinning={meta.phase === "roulette_spinning"}
+        spinTarget={meta.spinTarget || null}
       />
     );
   }
